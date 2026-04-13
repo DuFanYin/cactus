@@ -232,7 +232,7 @@ size_t topk_values = graph.topk(input, k);
 
 #### Sampling
 ```cpp
-size_t sampled = graph.sample(logits, temperature, top_p, min_p, top_k);
+size_t sampled = graph.sample(logits, temperature, top_p, top_k);
 ```
 
 ## Advanced Features

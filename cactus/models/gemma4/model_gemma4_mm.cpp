@@ -242,9 +242,9 @@ uint32_t Gemma4MmModel::decode_multimodal(
     const std::vector<std::string>& image_paths,
     const std::vector<float>* audio_features,
     size_t audio_num_frames,
-    float temperature, float top_p, float min_p,
-    float repetition_penalty, size_t top_k,
-    const std::string& profile_file, float* out_entropy) {
+    float temperature, float top_p, size_t top_k,
+    const std::string& profile_file, float* out_entropy,
+    float min_p, float repetition_penalty) {
 
     if (!initialized_ || !graph_handle_)
         throw std::runtime_error("Model not initialized - call init() first");
@@ -254,9 +254,7 @@ uint32_t Gemma4MmModel::decode_multimodal(
     if (!has_media) {
         prefill_completed_ = false;
         last_token_count_ = tokens.size();
-        return language_model_.decode(
-            tokens, temperature, top_p, min_p,
-            repetition_penalty, top_k, profile_file, out_entropy);
+        return language_model_.decode(tokens, temperature, top_p, top_k, profile_file, out_entropy, min_p, repetition_penalty);
     }
 
     if (temperature < 0) temperature = config_.default_temperature;
@@ -307,7 +305,7 @@ uint32_t Gemma4MmModel::decode_multimodal(
     }
 
     size_t sampled_token =
-        language_model_.sample_token(gb, logits_node, temperature, top_p, min_p, repetition_penalty, top_k);
+        language_model_.sample_token(gb, logits_node, temperature, top_p, top_k, min_p, repetition_penalty, nullptr);
 
     if (!profile_file.empty())
         gb->execute(profile_file);
@@ -330,16 +328,14 @@ size_t Gemma4MmModel::forward(const std::vector<uint32_t>& tokens, bool use_cach
 }
 
 uint32_t Gemma4MmModel::decode(const std::vector<uint32_t>& tokens,
-                                   float temperature, float top_p, float min_p,
-                                   float repetition_penalty, size_t top_k,
-                                   const std::string& profile_file, float* out_entropy) {
+                                   float temperature, float top_p, size_t top_k,
+                                   const std::string& profile_file, float* out_entropy,
+                                   float min_p, float repetition_penalty) {
     if (!initialized_ || !graph_handle_)
         throw std::runtime_error("Model not initialized - call init() first");
     prefill_completed_ = false;
     last_token_count_ = tokens.size();
-    return language_model_.decode(
-        tokens, temperature, top_p, min_p,
-        repetition_penalty, top_k, profile_file, out_entropy);
+    return language_model_.decode(tokens, temperature, top_p, top_k, profile_file, out_entropy, min_p, repetition_penalty);
 }
 
 void Gemma4MmModel::prefill(const std::vector<uint32_t>& tokens, size_t chunk_size,
@@ -382,25 +378,25 @@ void Gemma4MmModel::prefill_with_images(const std::vector<uint32_t>& tokens,
 
 uint32_t Gemma4MmModel::decode_with_images(
     const std::vector<uint32_t>& tokens, const std::vector<std::string>& image_paths,
-    float temperature, float top_p, float min_p,
-    float repetition_penalty, size_t top_k,
-    const std::string& profile_file, float* out_entropy) {
-    return decode_multimodal(
-        tokens, image_paths, nullptr, 0, temperature, top_p, min_p,
-        repetition_penalty, top_k, profile_file, out_entropy);
+    float temperature, float top_p, size_t top_k,
+    const std::string& profile_file, float* out_entropy,
+    float min_p, float repetition_penalty) {
+    return decode_multimodal(tokens, image_paths, nullptr, 0,
+                              temperature, top_p, top_k, profile_file, out_entropy,
+                              min_p, repetition_penalty);
 }
 
 uint32_t Gemma4MmModel::decode_with_audio(
     const std::vector<uint32_t>& tokens, const std::vector<float>& audio_features,
-    float temperature, float top_p, float min_p,
-    float repetition_penalty, size_t top_k,
+    float temperature, float top_p, size_t top_k,
     const std::string& profile_file, float* out_entropy,
+    float min_p, float repetition_penalty,
     float* /*out_token_time_start*/, float* /*out_token_time_end*/) {
     size_t num_frames = audio_features.size() / config_.audio_input_feat_size;
     std::vector<std::string> empty_images;
-    return decode_multimodal(
-        tokens, empty_images, &audio_features, num_frames, temperature, top_p, min_p,
-        repetition_penalty, top_k, profile_file, out_entropy);
+    return decode_multimodal(tokens, empty_images, &audio_features, num_frames,
+                              temperature, top_p, top_k, profile_file, out_entropy,
+                              min_p, repetition_penalty);
 }
 
 std::vector<float> Gemma4MmModel::get_image_embeddings(const std::string& image_path) {

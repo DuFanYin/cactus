@@ -422,8 +422,8 @@ uint32_t decode(
     const InferenceOptions& options,
     float* out_entropy
 ) {
-    return model->decode(tokens, options.temperature, options.top_p, options.min_p,
-                         options.repetition_penalty, options.top_k, "", out_entropy);
+    return model->decode(tokens, options.temperature, options.top_p, options.top_k,
+                         "", out_entropy, options.min_p, options.repetition_penalty);
 }
 
 uint32_t generate_first_token(
@@ -520,9 +520,9 @@ int cactus_complete(
             prompt_tokens = prompt.tokens.size();
             next_token = handle->model->decode_with_audio(
                 prompt.tokens, prompt.audio_features,
-                prompt.options.temperature, prompt.options.top_p, prompt.options.min_p,
-                prompt.options.repetition_penalty, prompt.options.top_k,
-                "", &first_token_entropy);
+                prompt.options.temperature, prompt.options.top_p, prompt.options.top_k,
+                "", &first_token_entropy,
+                prompt.options.min_p, prompt.options.repetition_penalty);
         } else {
             auto prefill_result = do_prefill(handle, prompt, prompt.tokens);
             prompt_tokens = prefill_result.prefilled_count + prefill_result.remaining_tokens.size();
@@ -588,9 +588,9 @@ int cactus_complete(
                 if (has_audio) {
                     next_token = handle->model->decode_with_audio(
                         handle->processed_tokens, prompt.audio_features,
-                        prompt.options.temperature, prompt.options.top_p, prompt.options.min_p,
-                        prompt.options.repetition_penalty, prompt.options.top_k,
-                        "", &token_entropy);
+                        prompt.options.temperature, prompt.options.top_p, prompt.options.top_k,
+                        "", &token_entropy,
+                        prompt.options.min_p, prompt.options.repetition_penalty);
                 } else {
                     next_token = decode(handle->model, {next_token}, prompt.options, &token_entropy);
                 }

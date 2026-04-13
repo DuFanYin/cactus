@@ -65,7 +65,7 @@ bool test_real_audio_transcription() {
 
     std::string output;
     for (int i = 0; i < 100; i++) {
-        uint32_t token = model->decode_with_audio(tokens, mel, 0.0f, 1.0f, 0.15f, 1.1f, 1, "");
+        uint32_t token = model->decode_with_audio(tokens, mel, 0.0f, 1.0f, 1, "");
         std::string piece = tokenizer->decode({token});
         output += piece;
         tokens.push_back(token);

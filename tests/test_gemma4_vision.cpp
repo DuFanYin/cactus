@@ -93,7 +93,7 @@ bool test_vlm_decode_with_image() {
     std::string output;
 
     for (int i = 0; i < 150; i++) {
-        uint32_t token = model->decode_with_images(tokens, images, 0.0f, 1.0f, 0.15f, 1.1f, 1, "");
+        uint32_t token = model->decode_with_images(tokens, images, 0.0f, 1.0f, 1, "");
         std::string piece = tokenizer->decode({token});
         output += piece;
         tokens.push_back(token);
