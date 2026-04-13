@@ -320,7 +320,7 @@ bool test_gemma4_vision(bool expect_npu) {
     auto start_time = std::chrono::high_resolution_clock::now();
 
     for (int i = 0; i < 150; i++) {
-        uint32_t token = model->decode_with_images(tokens, images, 0.0f, 1.0f, 1, "");
+        uint32_t token = model->decode_with_images(tokens, images, 0.0f, 1.0f, 0.15f, 1.1f, 1, "");
         if (!saw_first_token) {
             auto t_first = std::chrono::high_resolution_clock::now();
             ttft_ms = std::chrono::duration_cast<std::chrono::microseconds>(t_first - start_time).count() / 1000.0;
@@ -474,7 +474,7 @@ bool test_gemma4_audio(bool expect_npu) {
     bool saw_first_token = false;
     auto start_time = std::chrono::high_resolution_clock::now();
     for (int i = 0; i < 200; i++) {
-        uint32_t token = model->decode_with_audio(tokens, audio_features, 0.0f, 1.0f, 1, "");
+        uint32_t token = model->decode_with_audio(tokens, audio_features, 0.0f, 1.0f, 0.15f, 1.1f, 1, "");
         if (!saw_first_token) {
             auto t_first = std::chrono::high_resolution_clock::now();
             ttft_ms = std::chrono::duration_cast<std::chrono::microseconds>(t_first - start_time).count() / 1000.0;

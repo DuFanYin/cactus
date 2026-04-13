@@ -515,20 +515,10 @@ void cactus_softmax_f16(
 }
 
 void cactus_sample_f32(const float* logits, uint32_t* output, size_t vocab_size,
-                       float temperature, float top_p, size_t top_k, size_t random_seed,
+                       float temperature, float top_p, float min_p,
+                       size_t top_k, size_t random_seed,
                        const float* bias_values, const uint32_t* bias_indices,
                        size_t bias_count) {
-    cactus_sample_f32_ex(logits, output, vocab_size,
-                         temperature, top_p, 0.15f, 1.1f,
-                         top_k, random_seed,
-                         bias_values, bias_indices, bias_count);
-}
-
-void cactus_sample_f32_ex(const float* logits, uint32_t* output, size_t vocab_size,
-                          float temperature, float top_p, float min_p, float repetition_penalty,
-                          size_t top_k, size_t random_seed,
-                          const float* bias_values, const uint32_t* bias_indices,
-                          size_t bias_count) {
     if (vocab_size == 0) {
         output[0] = 0;
         return;
@@ -560,8 +550,6 @@ void cactus_sample_f32_ex(const float* logits, uint32_t* output, size_t vocab_si
         }
     }
 
-    (void)repetition_penalty;
-    
     if (top_k > 0) {
         std::vector<std::pair<float, size_t>> logit_pairs;
         logit_pairs.reserve(vocab_size);
@@ -711,20 +699,10 @@ void cactus_sample_f32_ex(const float* logits, uint32_t* output, size_t vocab_si
 }
 
 void cactus_sample_f16(const __fp16* logits, uint32_t* output, size_t vocab_size,
-                       float temperature, float top_p, size_t top_k, size_t random_seed,
+                       float temperature, float top_p, float min_p,
+                       size_t top_k, size_t random_seed,
                        const float* bias_values, const uint32_t* bias_indices,
                        size_t bias_count) {
-    cactus_sample_f16_ex(logits, output, vocab_size,
-                         temperature, top_p, 0.15f, 1.1f,
-                         top_k, random_seed,
-                         bias_values, bias_indices, bias_count);
-}
-
-void cactus_sample_f16_ex(const __fp16* logits, uint32_t* output, size_t vocab_size,
-                          float temperature, float top_p, float min_p, float repetition_penalty,
-                          size_t top_k, size_t random_seed,
-                          const float* bias_values, const uint32_t* bias_indices,
-                          size_t bias_count) {
     if (vocab_size == 0) {
         output[0] = 0;
         return;
@@ -763,8 +741,6 @@ void cactus_sample_f16_ex(const __fp16* logits, uint32_t* output, size_t vocab_s
             filtered_logits[i] = filtered_logits[i] * inv_temp;
         }
     }
-
-    (void)repetition_penalty;
 
     if (top_k > 0) {
         std::vector<std::pair<__fp16, size_t>> logit_pairs;

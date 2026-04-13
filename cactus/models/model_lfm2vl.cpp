@@ -70,7 +70,9 @@ bool Lfm2VlModel::init(const std::string& model_folder, size_t context_size, con
     if (do_warmup) {
         std::string warmup_text = system_prompt.empty() ? "Hello" : system_prompt;
         auto warmup_tokens = tokenizer_->encode(warmup_text);
-        language_model_.decode(warmup_tokens, config_.default_temperature, config_.default_top_p, config_.default_top_k, "");
+        language_model_.decode(
+            warmup_tokens, config_.default_temperature, config_.default_top_p,
+            0.15f, 1.1f, config_.default_top_k);
         language_model_.reset_cache();
     }
 
@@ -394,29 +396,21 @@ size_t Lfm2VlModel::forward(const std::vector<uint32_t>& tokens, bool use_cache)
 uint32_t Lfm2VlModel::decode(const std::vector<uint32_t>& tokens,
                                float temperature,
                                float top_p,
+                               float min_p,
+                               float repetition_penalty,
                                size_t top_k,
                                const std::string& profile_file,
-                               float* out_entropy,
-                               float min_p,
-                               float repetition_penalty) {
+                               float* out_entropy) {
     if (!initialized_ || !graph_handle_) {
         throw std::runtime_error("Model not initialized - call init() first");
-    }
-
-    if (temperature < 0) {
-        temperature = config_.default_temperature;
-    }
-    if (top_p < 0) {
-        top_p = config_.default_top_p;
-    }
-    if (top_k == 0) {
-        top_k = config_.default_top_k;
     }
 
     image_prefill_completed_ = false;
     last_token_count_ = tokens.size();
 
-    return language_model_.decode(tokens, temperature, top_p, top_k, profile_file, out_entropy, min_p, repetition_penalty);
+    return language_model_.decode(
+        tokens, temperature, top_p, min_p,
+        repetition_penalty, top_k, profile_file, out_entropy);
 }
 
 void Lfm2VlModel::prefill(const std::vector<uint32_t>& tokens, size_t chunk_size, const std::string& profile_file) {
@@ -510,21 +504,22 @@ uint32_t Lfm2VlModel::decode_with_images(
     const std::vector<std::string>& image_paths,
     float temperature,
     float top_p,
+    float min_p,
+    float repetition_penalty,
     size_t top_k,
     const std::string& profile_file,
-    float* out_entropy,
-    float min_p,
-    float repetition_penalty) {
+    float* out_entropy) {
 
     if (!initialized_ || !graph_handle_) {
         throw std::runtime_error("Model not initialized - call init() first");
     }
 
     if (image_paths.empty()) {
-
         image_prefill_completed_ = false;
         last_token_count_ = tokens.size();
-        return language_model_.decode(tokens, temperature, top_p, top_k, profile_file, out_entropy, min_p, repetition_penalty);
+        return language_model_.decode(
+            tokens, temperature, top_p, min_p,
+            repetition_penalty, top_k, profile_file, out_entropy);
     }
 
     if (temperature < 0) {
@@ -583,7 +578,7 @@ uint32_t Lfm2VlModel::decode_with_images(
 
     auto logits_node_id = gb->matmul(final_hidden_node, language_model_.output_weight_node_id_, true, backend);
     size_t sampled_token_id =
-        language_model_.sample_token(gb, logits_node_id, temperature, top_p, top_k, min_p, repetition_penalty, nullptr);
+        language_model_.sample_token(gb, logits_node_id, temperature, top_p, min_p, repetition_penalty, top_k);
     if (!profile_file.empty()) {
         gb->execute(profile_file);
 
